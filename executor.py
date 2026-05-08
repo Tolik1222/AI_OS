@@ -8,7 +8,7 @@ from google.genai import types
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL_ID = "gemini-flash-latest" # Використовуємо найновішу модель
+MODEL_ID = "gemini-flash-latest"
 
 SYSTEM_PROMPT = """
 Ти - AI OS Project Architect. Твоя відповідь МАЄ бути ТІЛЬКИ JSON-об'єктом.
@@ -28,7 +28,7 @@ SYSTEM_PROMPT = """
 def execute_plan_list(plan):
     results = []
     if not isinstance(plan, list):
-        return "❌ Помилка: 'plan' має бути списком."
+        return " Помилка: 'plan' має бути списком."
 
     for cmd in plan:
         if not isinstance(cmd, dict): continue
@@ -41,27 +41,27 @@ def execute_plan_list(plan):
                 directory = os.path.dirname(path)
                 if directory and not os.path.exists(directory):
                     os.makedirs(directory, exist_ok=True)
-                    results.append(f"📁 Створено папку: {directory}")
+                    results.append(f" Створено папку: {directory}")
                 
                 content = cmd.get("content", "")
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(content)
-                results.append(f"✅ Файл {path} створено.")
+                results.append(f" Файл {path} створено.")
             
             elif action == "read_file" and path:
                 if os.path.exists(path):
                     with open(path, "r", encoding="utf-8") as f:
-                        results.append(f"📄 Вміст {path}:\n{f.read()}")
+                        results.append(f" Вміст {path}:\n{f.read()}")
                 else:
-                    results.append(f"❌ Файл {path} не знайдено.")
+                    results.append(f" Файл {path} не знайдено.")
             
             elif action == "shell":
                 cmd_text = cmd.get("command")
                 res = subprocess.run(cmd_text, shell=True, capture_output=True, text=True)
-                results.append(f"🚀 Команда: {cmd_text}\nВивід: {res.stdout or res.stderr}")
+                results.append(f" Команда: {cmd_text}\nВивід: {res.stdout or res.stderr}")
         
         except Exception as e:
-            results.append(f"❌ Помилка в дії {action}: {e}")
+            results.append(f" Помилка в дії {action}: {e}")
             
     return "\n".join(results)
 
@@ -71,52 +71,47 @@ def main():
         safety_settings=[types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE")]
     ))
     
-    print("🤖 AI OS 2.2 (Project Mode) активована.")
+    print(" AI OS активована.")
     
     while True:
-        user_input = input("\n👤 Ви: ")
+        user_input = input("\n Ви: ")
         if user_input.lower() in ["exit", "вихід"]: break
         
-        # Додаємо структуру папок до кожного запиту для контексту
         structure = get_folder_structure()
         full_query = f"Поточна структура проєкту:\n{structure}\n\nЗапит: {user_input}"
         
-        print("🧠 Думаю...")
+        print(" Думаю...")
         try:
             response = chat.send_message(full_query)
             
             if not response.text:
-                print("⚠️ Порожня відповідь від ШІ.")
+                print(" Порожня відповідь від ШІ.")
                 continue
 
-            # Безпечне парсування JSON
             try:
                 clean_json = response.text.replace("```json", "").replace("```", "").strip()
                 data = json.loads(clean_json)
             except Exception as parse_error:
-                print(f"❌ Помилка парсингу відповіді: {parse_error}")
+                print(f" Помилка парсингу відповіді: {parse_error}")
                 print(f"Текст відповіді: {response.text}")
                 continue
             
-            # Вивід думок
             if isinstance(data, dict) and data.get("thoughts"):
-                print(f"\n🤖 AI: {data['thoughts']}")
+                print(f"\n AI: {data['thoughts']}")
             
-            # Виконання плану
             plan = data.get("plan") if isinstance(data, dict) else []
             if plan:
                 print("🛠 Виконую команди...")
                 feedback = execute_plan_list(plan)
                 print(feedback)
                 
-                # Підсумок
                 chat.send_message(f"Результат виконання: {feedback}. Прокоментуй успіх.")
 
         except Exception as e:
-            print(f"❌ Критична помилка: {e}")
+            print(f" Критична помилка: {e}")
 
 def get_folder_structure(root_dir="."):
-    exclude = {'.git', '.env', '__pycache__', 'venv', '.vscode', 'TaskSystem'} # TaskSystem додано в exclude для зручності тесту
+    exclude = {'.git', '.env', '__pycache__', 'venv'}
     tree = []
     try:
         for root, dirs, files in os.walk(root_dir):
